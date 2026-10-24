@@ -12,6 +12,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Iconos: el de la pestaña del navegador y el de la pantalla de inicio del móvil -->
+  <link rel="icon" href="iconos/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="style.css">
   <!-- Aplicamos el tema guardado ANTES de pintar, para que no parpadee -->
   <script>
@@ -25,7 +29,12 @@
 
   <!-- CABECERA: nombre de la app y botón de tema -->
   <header class="cabecera">
-    <h1 class="marca">Logg'd In</h1>
+    <h1 class="marca">
+      <!-- El logo: una L hecha con una tira de película.
+           "currentColor" hace que tenga el mismo color que el texto (claro u oscuro) -->
+      <svg class="marca-logo" viewBox="0 0 64 64" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M16.5 10h11a2.5 2.5 0 0 1 2.5 2.5V38h21.5a2.5 2.5 0 0 1 2.5 2.5v11a2.5 2.5 0 0 1-2.5 2.5h-35A2.5 2.5 0 0 1 14 51.5v-39A2.5 2.5 0 0 1 16.5 10Z M16.2 13h2v3h-2Z M25.8 13h2v3h-2Z M16.2 18h2v3h-2Z M25.8 18h2v3h-2Z M16.2 23h2v3h-2Z M25.8 23h2v3h-2Z M16.2 28h2v3h-2Z M25.8 28h2v3h-2Z M16.2 33h2v3h-2Z M25.8 33h2v3h-2Z M33 40.2h3v2h-3Z M33 49.8h3v2h-3Z M38 40.2h3v2h-3Z M38 49.8h3v2h-3Z M43 40.2h3v2h-3Z M43 49.8h3v2h-3Z M48 40.2h3v2h-3Z M48 49.8h3v2h-3Z"/></svg>
+      Logg'd In
+    </h1>
     <button class="boton-icono" id="boton-tema" type="button" aria-label="Cambiar entre modo claro y oscuro">
       <!-- Luna (se ve en modo claro) -->
       <svg class="icono-luna" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
