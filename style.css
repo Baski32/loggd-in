@@ -1,0 +1,603 @@
+/* =========================================
+   COLORES (variables)
+   Si quieres cambiar un color, cámbialo solo aquí.
+   Hay dos juegos: modo claro y modo oscuro.
+   ========================================= */
+:root {
+  --fondo: #f4f5f7;        /* fondo general, gris muy frío */
+  --superficie: #ffffff;   /* panel y controles */
+  --texto: #16181d;
+  --apagado: #6a7080;      /* textos secundarios */
+  --linea: #e1e3e8;        /* separadores */
+  --suave: #e9ebef;        /* fondo de botones no elegidos */
+  --pendiente: #c98a1b;
+  --en-curso: #3471e6;
+  --terminado: #23935f;
+  --sombra-panel: 0 -8px 40px rgba(20, 23, 28, 0.12);
+  color-scheme: light;
+}
+
+/* Modo oscuro automático (si el móvil está en oscuro y no has elegido otro) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fondo: #14171c;
+    --superficie: #1d2128;
+    --texto: #e9ebf0;
+    --apagado: #8d94a5;
+    --linea: #2a2f38;
+    --suave: #262b33;
+    --pendiente: #e2a73c;
+    --en-curso: #6c9cff;
+    --terminado: #3fc185;
+    --sombra-panel: 0 -8px 40px rgba(0, 0, 0, 0.5);
+    color-scheme: dark;
+  }
+}
+
+/* Modo oscuro elegido a mano con el botón */
+:root[data-theme="dark"] {
+  --fondo: #14171c;
+  --superficie: #1d2128;
+  --texto: #e9ebf0;
+  --apagado: #8d94a5;
+  --linea: #2a2f38;
+  --suave: #262b33;
+  --pendiente: #e2a73c;
+  --en-curso: #6c9cff;
+  --terminado: #3fc185;
+  --sombra-panel: 0 -8px 40px rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
+}
+
+/* =========================================
+   BASE
+   ========================================= */
+* {
+  box-sizing: border-box; /* el ancho incluye borde y relleno */
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: "Schibsted Grotesk", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  background: var(--fondo);
+  color: var(--texto);
+  -webkit-tap-highlight-color: transparent; /* quita el recuadro azul al tocar en el móvil */
+}
+
+/* Lo que lleva "hidden" se esconde siempre, aunque otra regla diga lo contrario */
+[hidden] {
+  display: none !important;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* Contorno visible al moverse con el teclado */
+:focus-visible {
+  outline: 2px solid var(--en-curso);
+  outline-offset: 2px;
+}
+
+/* Texto solo para lectores de pantalla */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* =========================================
+   CABECERA
+   ========================================= */
+.cabecera {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: calc(18px + env(safe-area-inset-top)) 16px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* El nombre de la app: grande, apretado y con peso */
+.marca {
+  margin: 0;
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+
+.boton-icono {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--apagado);
+  display: grid;
+  place-items: center;
+}
+
+.boton-icono:hover {
+  color: var(--texto);
+}
+
+/* Enseñamos la luna en claro y el sol en oscuro */
+.icono-sol { display: none; }
+:root[data-theme="dark"] .icono-sol { display: block; }
+:root[data-theme="dark"] .icono-luna { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .icono-sol { display: block; }
+  :root:not([data-theme="light"]) .icono-luna { display: none; }
+}
+
+/* =========================================
+   PESTAÑAS (apartados)
+   Una sola fila que se desliza con el dedo.
+   ========================================= */
+.pestanas {
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  gap: 22px;
+  padding: 0 16px;
+  overflow-x: auto;
+  scrollbar-width: none;           /* oculta la barra de desplazamiento */
+  border-bottom: 1px solid var(--linea);
+  position: sticky;                /* se queda pegada arriba al bajar */
+  top: 0;
+  z-index: 5;
+  background: var(--fondo);
+}
+
+.pestanas::-webkit-scrollbar {
+  display: none;
+}
+
+.pestana {
+  flex: none;
+  border: 0;
+  background: none;
+  padding: 14px 0 12px;
+  font-size: 0.98rem;
+  font-weight: 500;
+  color: var(--apagado);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px; /* que la raya tape la línea gris */
+}
+
+.pestana:hover {
+  color: var(--texto);
+}
+
+.pestana.activa {
+  color: var(--texto);
+  font-weight: 700;
+  border-bottom-color: var(--texto);
+}
+
+/* =========================================
+   CONTENIDO
+   ========================================= */
+.contenedor {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px 16px calc(110px + env(safe-area-inset-bottom));
+}
+
+/* Control segmentado: varias opciones dentro de una misma caja */
+.segmentado {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: var(--suave);
+  border-radius: 10px;
+  padding: 3px;
+  margin-bottom: 8px;
+}
+
+.segmentado button {
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  padding: 7px 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--apagado);
+  white-space: nowrap;
+}
+
+.segmentado button[aria-pressed="true"] {
+  background: var(--superficie);
+  color: var(--texto);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+/* =========================================
+   LISTA
+   Filas separadas por una línea, sin tarjetas.
+   ========================================= */
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fila {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--linea);
+  background: none;
+  text-align: left;
+  padding: 14px 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 16px;
+}
+
+.fila:active {
+  opacity: 0.6;
+}
+
+.fila-titulo {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  overflow-wrap: anywhere; /* que los títulos largos no se salgan */
+}
+
+.fila-datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: var(--apagado);
+}
+
+/* El estado lleva un puntito de color delante */
+.estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.estado::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.estado.pendiente { color: var(--pendiente); }
+.estado.en-curso  { color: var(--en-curso); }
+.estado.terminado { color: var(--terminado); }
+
+/* La nota: el número grande a la derecha de cada fila */
+.fila-nota {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  min-width: 2ch;
+  text-align: right;
+}
+
+.fila-nota.sin-nota {
+  color: var(--linea);
+  font-weight: 500;
+}
+
+/* Mensaje de lista vacía */
+.vacio {
+  padding: 64px 8px;
+  text-align: center;
+}
+
+.vacio-titulo {
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+
+.vacio-texto {
+  margin: 0;
+  color: var(--apagado);
+}
+
+/* =========================================
+   BOTÓN FLOTANTE (+)
+   ========================================= */
+.boton-flotante {
+  position: fixed;
+  right: max(20px, calc(50% - 300px)); /* en pantallas grandes se queda junto a la columna */
+  bottom: calc(22px + env(safe-area-inset-bottom));
+  width: 58px;
+  height: 58px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--texto);
+  color: var(--fondo);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+  z-index: 10;
+  transition: transform 0.15s ease;
+}
+
+.boton-flotante:active {
+  transform: scale(0.92);
+}
+
+/* =========================================
+   PANEL (dialog)
+   En el móvil: pegado abajo y a todo lo ancho.
+   ========================================= */
+.hoja {
+  border: 0;
+  padding: 0;
+  margin: auto auto 0;
+  width: 100%;
+  max-width: 100%;
+  max-height: 92dvh;
+  border-radius: 20px 20px 0 0;
+  background: var(--superficie);
+  color: var(--texto);
+  box-shadow: var(--sombra-panel);
+}
+
+.hoja::backdrop {
+  background: rgba(10, 12, 16, 0.45);
+}
+
+/* Animación al abrir: sube desde abajo */
+.hoja[open] {
+  animation: subir 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes subir {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+#formulario {
+  padding: 8px 18px calc(18px + env(safe-area-inset-bottom));
+}
+
+/* La rayita de arriba que indica que es un panel */
+.hoja-asa {
+  width: 38px;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--linea);
+  margin: 0 auto 10px;
+}
+
+.hoja-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.hoja-cabecera h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.boton-texto {
+  border: 0;
+  background: none;
+  padding: 8px 0;
+  font-weight: 600;
+  color: var(--en-curso);
+}
+
+/* El título se escribe grande, sin caja, como en Notion */
+.campo-titulo input {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--linea);
+  background: transparent;
+  padding: 10px 0 12px;
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  border-radius: 0;
+}
+
+.campo-titulo input:focus {
+  outline: none;
+  border-bottom-color: var(--texto);
+}
+
+.campo-titulo input::placeholder {
+  color: var(--apagado);
+  opacity: 0.6;
+}
+
+.grupo {
+  border: 0;
+  margin: 18px 0 0;
+  padding: 0;
+  display: block;
+}
+
+.grupo legend,
+.etiqueta-grupo {
+  display: block;
+  padding: 0;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--apagado);
+}
+
+.ayuda {
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+/* Botones de elegir (apartado, estado, nota) */
+.opciones {
+  display: grid;
+  gap: 6px;
+}
+
+.opciones-apartado { grid-template-columns: repeat(3, 1fr); }
+.opciones-estado   { grid-template-columns: repeat(3, 1fr); }
+.opciones-nota     { grid-template-columns: repeat(10, 1fr); gap: 4px; }
+
+.opciones button {
+  border: 0;
+  background: var(--suave);
+  border-radius: 10px;
+  padding: 10px 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.opciones-nota button {
+  padding: 10px 0;
+  font-variant-numeric: tabular-nums;
+  border-radius: 8px;
+}
+
+.opciones button[aria-pressed="true"] {
+  background: var(--texto);
+  color: var(--superficie);
+  font-weight: 700;
+}
+
+.campo-fecha input {
+  width: 100%;
+  border: 0;
+  background: var(--suave);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.hoja-acciones {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.boton {
+  border: 0;
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-weight: 700;
+}
+
+.boton-principal {
+  flex: 1;
+  background: var(--texto);
+  color: var(--superficie);
+}
+
+.boton-borrar {
+  background: var(--suave);
+  color: #d64545;
+}
+
+/* Si el título está vacío, el botón se ve apagado */
+.boton-principal:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* =========================================
+   AVISO de abajo
+   ========================================= */
+.aviso {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(22px + env(safe-area-inset-bottom));
+  max-width: 420px;
+  margin: 0 auto;
+  background: var(--texto);
+  color: var(--fondo);
+  border-radius: 12px;
+  padding: 6px 8px 6px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  z-index: 20;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.aviso[hidden] {
+  display: none;
+}
+
+.aviso .boton-texto {
+  color: var(--fondo);
+  text-decoration: underline;
+  padding: 8px;
+}
+
+/* =========================================
+   ORDENADOR (700px o más)
+   El panel sale en el centro en vez de abajo.
+   ========================================= */
+@media (min-width: 700px) {
+  .hoja {
+    margin: auto;
+    max-width: 480px;
+    border-radius: 20px;
+  }
+
+  .hoja-asa {
+    display: none;
+  }
+
+  #formulario {
+    padding: 20px 24px 24px;
+  }
+
+  .hoja[open] {
+    animation: aparecer 0.18s ease-out;
+  }
+
+  @keyframes aparecer {
+    from { opacity: 0; transform: scale(0.97); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  .fila:hover .fila-titulo {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+/* Si el usuario tiene las animaciones desactivadas, las quitamos */
+@media (prefers-reduced-motion: reduce) {
+  .hoja[open] {
+    animation: none;
+  }
+}

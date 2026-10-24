@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <!-- Hace que la página se adapte a la pantalla del móvil -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Logg'd In</title>
+  <!-- Color de la barra del navegador en el móvil (claro y oscuro) -->
+  <meta name="theme-color" content="#f4f5f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#14171c" media="(prefers-color-scheme: dark)">
+  <!-- Tipografía: Schibsted Grotesk (Google Fonts) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <!-- Aplicamos el tema guardado ANTES de pintar, para que no parpadee -->
+  <script>
+    try {
+      var tema = localStorage.getItem("loggdin-tema");
+      if (tema) document.documentElement.dataset.theme = tema;
+    } catch (e) {}
+  </script>
+</head>
+<body>
+
+  <!-- CABECERA: nombre de la app y botón de tema -->
+  <header class="cabecera">
+    <h1 class="marca">Logg'd In</h1>
+    <button class="boton-icono" id="boton-tema" type="button" aria-label="Cambiar entre modo claro y oscuro">
+      <!-- Luna (se ve en modo claro) -->
+      <svg class="icono-luna" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      <!-- Sol (se ve en modo oscuro) -->
+      <svg class="icono-sol" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+  </header>
+
+  <!-- PESTAÑAS DE APARTADO: en el móvil se deslizan hacia los lados -->
+  <nav class="pestanas" id="pestanas" aria-label="Apartados">
+    <button class="pestana activa" data-apartado="todos" type="button">Todo</button>
+    <button class="pestana" data-apartado="musica" type="button">Música</button>
+    <button class="pestana" data-apartado="videojuegos" type="button">Videojuegos</button>
+    <button class="pestana" data-apartado="libros" type="button">Libros</button>
+    <button class="pestana" data-apartado="series" type="button">Series</button>
+    <button class="pestana" data-apartado="peliculas" type="button">Películas</button>
+    <button class="pestana" data-apartado="manga" type="button">Manga</button>
+  </nav>
+
+  <main class="contenedor">
+    <!-- FILTRO POR ESTADO: un control segmentado -->
+    <div class="segmentado" id="filtro-estado" role="group" aria-label="Filtrar por estado">
+      <button type="button" data-estado="todos" aria-pressed="true">Todos</button>
+      <button type="button" data-estado="en-curso" aria-pressed="false">En curso</button>
+      <button type="button" data-estado="pendiente" aria-pressed="false">Pendiente</button>
+      <button type="button" data-estado="terminado" aria-pressed="false">Terminado</button>
+    </div>
+
+    <!-- LA LISTA: app.js mete aquí los elementos -->
+    <ul class="lista" id="lista"></ul>
+
+    <!-- Mensaje cuando no hay nada que enseñar -->
+    <div class="vacio" id="vacio" hidden>
+      <p class="vacio-titulo" id="vacio-titulo">Tu registro está vacío</p>
+      <p class="vacio-texto">Pulsa + para añadir lo primero.</p>
+    </div>
+  </main>
+
+  <!-- BOTÓN FLOTANTE para añadir -->
+  <button class="boton-flotante" id="boton-anadir" type="button" aria-label="Añadir">
+    <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+  </button>
+
+  <!-- PANEL PARA AÑADIR / EDITAR.
+       <dialog> es una ventana que el navegador sabe abrir y cerrar.
+       En el móvil sube desde abajo; en el ordenador sale en el centro. -->
+  <dialog class="hoja" id="hoja" aria-labelledby="hoja-titulo">
+    <form id="formulario" method="dialog">
+      <div class="hoja-asa" aria-hidden="true"></div>
+
+      <div class="hoja-cabecera">
+        <h2 id="hoja-titulo">Añadir</h2>
+        <button class="boton-texto" type="button" id="boton-cerrar">Cancelar</button>
+      </div>
+
+      <label class="campo-titulo">
+        <span class="sr-only">Título</span>
+        <input type="text" id="campo-titulo" placeholder="Título" autocomplete="off" required>
+      </label>
+
+      <fieldset class="grupo">
+        <legend>Apartado</legend>
+        <div class="opciones opciones-apartado" id="opciones-apartado">
+          <button type="button" data-valor="musica">Música</button>
+          <button type="button" data-valor="videojuegos">Videojuegos</button>
+          <button type="button" data-valor="libros">Libros</button>
+          <button type="button" data-valor="series">Series</button>
+          <button type="button" data-valor="peliculas">Películas</button>
+          <button type="button" data-valor="manga">Manga</button>
+        </div>
+      </fieldset>
+
+      <fieldset class="grupo">
+        <legend>Estado</legend>
+        <div class="opciones opciones-estado" id="opciones-estado">
+          <button type="button" data-valor="pendiente">Pendiente</button>
+          <button type="button" data-valor="en-curso">En curso</button>
+          <button type="button" data-valor="terminado">Terminado</button>
+        </div>
+      </fieldset>
+
+      <!-- La fecha solo se enseña si el estado es "Terminado" -->
+      <label class="grupo campo-fecha" id="bloque-fecha" hidden>
+        <span class="etiqueta-grupo">Terminado el</span>
+        <input type="date" id="campo-fecha">
+      </label>
+
+      <fieldset class="grupo">
+        <legend>Nota <span class="ayuda">(toca otra vez para quitarla)</span></legend>
+        <div class="opciones opciones-nota" id="opciones-nota">
+          <button type="button" data-valor="1">1</button>
+          <button type="button" data-valor="2">2</button>
+          <button type="button" data-valor="3">3</button>
+          <button type="button" data-valor="4">4</button>
+          <button type="button" data-valor="5">5</button>
+          <button type="button" data-valor="6">6</button>
+          <button type="button" data-valor="7">7</button>
+          <button type="button" data-valor="8">8</button>
+          <button type="button" data-valor="9">9</button>
+          <button type="button" data-valor="10">10</button>
+        </div>
+      </fieldset>
+
+      <div class="hoja-acciones">
+        <!-- Borrar solo aparece al editar -->
+        <button class="boton boton-borrar" type="button" id="boton-borrar" hidden>Borrar</button>
+        <button class="boton boton-principal" type="submit" id="boton-guardar">Añadir</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- AVISO de abajo ("Borrado" + Deshacer) -->
+  <div class="aviso" id="aviso" role="status" hidden>
+    <span id="aviso-texto"></span>
+    <button class="boton-texto" type="button" id="aviso-deshacer">Deshacer</button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
