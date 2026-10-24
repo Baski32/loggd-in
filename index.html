@@ -29,12 +29,9 @@
 
   <!-- CABECERA: nombre de la app y botón de tema -->
   <header class="cabecera">
-    <h1 class="marca">
-      <!-- El logo: una L hecha con una tira de película.
-           "currentColor" hace que tenga el mismo color que el texto (claro u oscuro) -->
-      <svg class="marca-logo" viewBox="0 0 64 64" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M16.5 10h11a2.5 2.5 0 0 1 2.5 2.5V38h21.5a2.5 2.5 0 0 1 2.5 2.5v11a2.5 2.5 0 0 1-2.5 2.5h-35A2.5 2.5 0 0 1 14 51.5v-39A2.5 2.5 0 0 1 16.5 10Z M16.2 13h2v3h-2Z M25.8 13h2v3h-2Z M16.2 18h2v3h-2Z M25.8 18h2v3h-2Z M16.2 23h2v3h-2Z M25.8 23h2v3h-2Z M16.2 28h2v3h-2Z M25.8 28h2v3h-2Z M16.2 33h2v3h-2Z M25.8 33h2v3h-2Z M33 40.2h3v2h-3Z M33 49.8h3v2h-3Z M38 40.2h3v2h-3Z M38 49.8h3v2h-3Z M43 40.2h3v2h-3Z M43 49.8h3v2h-3Z M48 40.2h3v2h-3Z M48 49.8h3v2h-3Z"/></svg>
-      Logg'd In
-    </h1>
+    <!-- El título: la L es el logo (una tira de película) y el resto es texto.
+         aria-label hace que los lectores de pantalla lean "Logg'd In" entero -->
+    <h1 class="marca" aria-label="Logg'd In"><svg class="marca-l" viewBox="0 0 593 703" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M93 0H242A28 28 0 0 1 270 28V518H547A28 28 0 0 1 575 546V675A28 28 0 0 1 547 703H93A28 28 0 0 1 65 675V28A28 28 0 0 1 93 0ZM103 44h64v90h-64ZM103 169h64v90h-64ZM103 294h64v90h-64ZM103 419h64v90h-64ZM305 603h90v62h-90ZM430 603h90v62h-90Z"/></svg><span aria-hidden="true">ogg'd In</span></h1>
     <button class="boton-icono" id="boton-tema" type="button" aria-label="Cambiar entre modo claro y oscuro">
       <!-- Luna (se ve en modo claro) -->
       <svg class="icono-luna" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
@@ -105,6 +102,13 @@
           <button type="button" data-valor="peliculas">Películas</button>
           <button type="button" data-valor="manga">Manga</button>
         </div>
+      </fieldset>
+
+      <!-- PORTADA: se busca sola al escribir el título y eliges una tocándola -->
+      <fieldset class="grupo">
+        <legend>Portada <span class="ayuda">(toca otra vez para quitarla)</span></legend>
+        <div class="portadas" id="portadas" aria-live="polite"></div>
+        <p class="portadas-estado" id="portadas-estado">Escribe el título para buscar portadas.</p>
       </fieldset>
 
       <fieldset class="grupo">

@@ -120,16 +120,15 @@ button {
   font-weight: 800;
   letter-spacing: -0.045em;
   line-height: 1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
-.marca-logo {
-  width: 1.15em;
-  height: 1.15em;
-  flex: none;
-  margin-left: -0.12em; /* el dibujo tiene margen propio; así queda alineado con la lista */
+/* La L del título es un dibujo del mismo tamaño que una letra:
+   0.593em de ancho y 0.703em de alto (las medidas de la L de la tipografía) */
+.marca-l {
+  width: 0.593em;
+  height: 0.703em;
+  vertical-align: baseline;   /* que se apoye en la misma línea que las letras */
+  margin-right: -0.045em;     /* el mismo espacio entre letras que el resto */
 }
 
 .boton-icono {
@@ -248,17 +247,49 @@ button {
   padding: 0;
 }
 
+/* Cada elemento es una tarjeta a todo lo ancho:
+   portada | título y datos | nota */
+.lista li + li {
+  margin-top: 10px;
+}
+
 .fila {
   width: 100%;
   border: 0;
-  border-bottom: 1px solid var(--linea);
-  background: none;
+  border-radius: 14px;
+  background: var(--superficie);
   text-align: left;
-  padding: 14px 0;
+  padding: 10px 16px 10px 10px;
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
+}
+
+/* El hueco de la portada: vertical (como un póster) o cuadrado (como un disco) */
+.portada {
+  display: block;
+  width: 64px;
+  height: 96px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--suave);
+  flex: none;
+}
+
+.portada.cuadrada {
+  height: 64px;
+}
+
+.portada img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* rellena el hueco sin deformarse */
+  display: block;
+}
+
+.fila-info {
+  min-width: 0; /* deja que los títulos largos bajen de línea en vez de empujar la nota */
 }
 
 .fila:active {
@@ -499,6 +530,63 @@ button {
   background: var(--texto);
   color: var(--superficie);
   font-weight: 700;
+}
+
+/* Fila de portadas para elegir: se desliza hacia los lados */
+.portadas {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 3px;          /* sitio para el borde de la elegida */
+  margin: -3px -3px 0;
+}
+
+.portadas::-webkit-scrollbar {
+  display: none;
+}
+
+.portada-opcion {
+  flex: none;
+  width: 76px;
+  border: 0;
+  background: none;
+  padding: 0;
+  text-align: left;
+}
+
+.portada-opcion .portada {
+  width: 76px;
+  height: 114px;
+}
+
+.portada-opcion .portada.cuadrada {
+  height: 76px;
+}
+
+.portada-opcion[aria-pressed="true"] .portada {
+  outline: 3px solid var(--texto);
+  outline-offset: 2px;
+}
+
+.portada-pie {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: var(--apagado);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* corta con "…" si no cabe */
+}
+
+.portadas-estado {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  color: var(--apagado);
+}
+
+.portadas-estado:empty {
+  display: none;
 }
 
 .campo-fecha input {

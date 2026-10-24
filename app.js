@@ -35,7 +35,9 @@ let ultimoBorrado = null;          // lo último que se borró, para poder desha
 let temporizadorAviso = null;      // para esconder el aviso pasados unos segundos
 
 // Lo que está elegido ahora mismo en el panel
-let eleccion = { apartado: "musica", estado: "pendiente", nota: null };
+let eleccion = { apartado: "musica", estado: "pendiente", nota: null, portada: null };
+let temporizadorBusqueda = null;   // espera un poco a que dejes de escribir antes de buscar
+let numeroBusqueda = 0;            // para ignorar respuestas de búsquedas antiguas
 
 // ----- PARTES DEL HTML QUE VAMOS A USAR -----
 const pestanas = document.getElementById("pestanas");
@@ -58,6 +60,9 @@ const opcionesNota = document.getElementById("opciones-nota");
 const botonGuardar = document.getElementById("boton-guardar");
 const botonBorrar = document.getElementById("boton-borrar");
 const botonCerrar = document.getElementById("boton-cerrar");
+
+const contenedorPortadas = document.getElementById("portadas");
+const estadoPortadas = document.getElementById("portadas-estado");
 
 const aviso = document.getElementById("aviso");
 const avisoTexto = document.getElementById("aviso-texto");
@@ -158,7 +163,7 @@ function pintarLista() {
 function crearFila(e) {
   const li = document.createElement("li");
 
-  // Toda la fila es un botón: al tocarla, se abre para editar
+  // Toda la tarjeta es un botón: al tocarla, se abre para editar
   const fila = document.createElement("button");
   fila.type = "button";
   fila.className = "fila";
@@ -166,7 +171,11 @@ function crearFila(e) {
     abrirPanel(e.id);
   });
 
+  // La portada a la izquierda (cuadrada en música, vertical en el resto)
+  fila.appendChild(crearPortada(e.portada, e.apartado));
+
   const info = document.createElement("span");
+  info.className = "fila-info";
 
   const titulo = document.createElement("span");
   titulo.className = "fila-titulo";
@@ -209,6 +218,24 @@ function crearFila(e) {
   return li;
 }
 
+// Crea el hueco de la portada: la imagen si la hay, o un recuadro vacío
+function crearPortada(url, apartado) {
+  const caja = document.createElement("span");
+  caja.className = "portada" + (apartado === "musica" ? " cuadrada" : "");
+  if (url) {
+    const img = document.createElement("img");
+    img.src = url;
+    img.alt = "";
+    img.loading = "lazy"; // solo se descarga cuando va a verse
+    // Si la imagen no carga (sin internet, enlace roto), dejamos el recuadro vacío
+    img.addEventListener("error", function () {
+      img.remove();
+    });
+    caja.appendChild(img);
+  }
+  return caja;
+}
+
 // =========================================
 // EL PANEL (añadir y editar)
 // =========================================
@@ -220,7 +247,7 @@ function abrirPanel(id) {
   if (idEditando) {
     const e = elementos.find(function (x) { return x.id === idEditando; });
     campoTitulo.value = e.titulo;
-    eleccion = { apartado: e.apartado, estado: e.estado, nota: e.nota };
+    eleccion = { apartado: e.apartado, estado: e.estado, nota: e.nota, portada: e.portada || null };
     campoFecha.value = e.fecha || fechaDeHoy();
     hojaTitulo.textContent = "Editar";
     botonGuardar.textContent = "Guardar";
@@ -232,6 +259,7 @@ function abrirPanel(id) {
       apartado: apartadoActual === "todos" ? "musica" : apartadoActual,
       estado: "pendiente",
       nota: null,
+      portada: null,
     };
     campoFecha.value = fechaDeHoy();
     hojaTitulo.textContent = "Añadir";
@@ -240,6 +268,17 @@ function abrirPanel(id) {
   }
 
   pintarEleccion();
+  // Al editar, enseñamos la portada que ya tenía (y no buscamos hasta que cambies algo)
+  numeroBusqueda++;
+  clearTimeout(temporizadorBusqueda);
+  if (eleccion.portada) {
+    pintarPortadas([{ titulo: campoTitulo.value, extra: "Actual", portada: eleccion.portada }]);
+    estadoPortadas.textContent = "Cambia el título o el apartado para buscar otras.";
+  } else {
+    pintarPortadas([]);
+    estadoPortadas.textContent = idEditando ? "Sin portada. Cambia el título para buscar." : "Escribe el título para buscar portadas.";
+    if (idEditando) buscarPortadasPronto(0);
+  }
   hoja.showModal();
   // Al añadir, ponemos el cursor en el título para escribir directamente
   if (!idEditando) {
@@ -266,6 +305,7 @@ opcionesApartado.addEventListener("click", function (evento) {
   if (!boton) return;
   eleccion.apartado = boton.dataset.valor;
   pintarEleccion();
+  buscarPortadasPronto(0); // cada apartado busca en un sitio distinto
 });
 
 // Clic en los botones de estado
@@ -285,8 +325,26 @@ opcionesNota.addEventListener("click", function (evento) {
   pintarEleccion();
 });
 
-// Al escribir el título, activamos o apagamos el botón de guardar
-campoTitulo.addEventListener("input", pintarEleccion);
+// Al escribir el título: activamos el botón de guardar y buscamos portadas
+campoTitulo.addEventListener("input", function () {
+  pintarEleccion();
+  buscarPortadasPronto(600);
+});
+
+// Clic en una portada: la elegimos (o la quitamos si ya estaba elegida)
+contenedorPortadas.addEventListener("click", function (evento) {
+  const boton = evento.target.closest("button");
+  if (!boton) return;
+  if (eleccion.portada === boton.dataset.portada) {
+    eleccion.portada = null;
+  } else {
+    eleccion.portada = boton.dataset.portada;
+    // Ponemos el título oficial (lo puedes cambiar después)
+    if (boton.dataset.titulo) campoTitulo.value = boton.dataset.titulo;
+  }
+  marcarPortada();
+  pintarEleccion();
+});
 
 // Guardar (Añadir o Guardar cambios)
 formulario.addEventListener("submit", function (evento) {
@@ -300,6 +358,7 @@ formulario.addEventListener("submit", function (evento) {
     apartado: eleccion.apartado,
     estado: eleccion.estado,
     nota: eleccion.nota,
+    portada: eleccion.portada,
     // solo guardamos fecha si está terminado
     fecha: eleccion.estado === "terminado" ? (campoFecha.value || fechaDeHoy()) : null,
     actualizado: Date.now(),
@@ -339,6 +398,175 @@ hoja.addEventListener("click", function (evento) {
 botonAnadir.addEventListener("click", function () {
   abrirPanel();
 });
+
+// =========================================
+// BUSCAR PORTADAS
+// Cada apartado pregunta a un servicio gratuito distinto.
+// Todos devuelven una lista con: titulo, extra (año, autor...) y portada (dirección de la imagen).
+// =========================================
+
+// Algunos servicios (iTunes) no dejan pedir datos con fetch desde otra web.
+// "JSONP" es un truco antiguo: cargamos la respuesta como si fuera un <script>.
+function pedirJsonp(url) {
+  return new Promise(function (resolver, fallar) {
+    const nombre = "respuesta" + Date.now() + Math.floor(Math.random() * 1000);
+    const script = document.createElement("script");
+    const limite = setTimeout(function () { limpiar(); fallar(new Error("Tiempo agotado")); }, 8000);
+    function limpiar() {
+      clearTimeout(limite);
+      delete window[nombre];
+      script.remove();
+    }
+    window[nombre] = function (datos) { limpiar(); resolver(datos); };
+    script.onerror = function () { limpiar(); fallar(new Error("No se pudo cargar")); };
+    script.src = url + "&callback=" + nombre;
+    document.body.appendChild(script);
+  });
+}
+
+// fetch normal: pide la dirección y convierte la respuesta en datos
+async function pedirJson(url) {
+  const respuesta = await fetch(url);
+  if (!respuesta.ok) throw new Error("Error " + respuesta.status);
+  return respuesta.json();
+}
+
+// El año a partir de una fecha tipo "2023-05-12"
+function anio(fecha) {
+  return fecha ? String(fecha).slice(0, 4) : "";
+}
+
+const BUSCADORES = {
+  // Música: discos de iTunes
+  musica: async function (texto) {
+    const datos = await pedirJsonp("https://itunes.apple.com/search?media=music&entity=album&country=es&limit=10&term=" + encodeURIComponent(texto));
+    return datos.results.map(function (r) {
+      return { titulo: r.collectionName, extra: r.artistName, portada: r.artworkUrl100.replace("100x100bb", "300x300bb") };
+    });
+  },
+
+  // Películas: iTunes
+  peliculas: async function (texto) {
+    const datos = await pedirJsonp("https://itunes.apple.com/search?media=movie&entity=movie&country=es&limit=10&term=" + encodeURIComponent(texto));
+    return datos.results.map(function (r) {
+      return { titulo: r.trackName, extra: anio(r.releaseDate), portada: r.artworkUrl100.replace("100x100bb", "300x450bb") };
+    });
+  },
+
+  // Series: TVmaze
+  series: async function (texto) {
+    const datos = await pedirJson("https://api.tvmaze.com/search/shows?q=" + encodeURIComponent(texto));
+    return datos
+      .filter(function (r) { return r.show.image; })
+      .map(function (r) {
+        return { titulo: r.show.name, extra: anio(r.show.premiered), portada: r.show.image.medium.replace("http:", "https:") };
+      });
+  },
+
+  // Libros: Open Library
+  libros: async function (texto) {
+    const datos = await pedirJson("https://openlibrary.org/search.json?limit=12&fields=title,author_name,first_publish_year,cover_i&q=" + encodeURIComponent(texto));
+    return datos.docs
+      .filter(function (r) { return r.cover_i; })
+      .map(function (r) {
+        return {
+          titulo: r.title,
+          extra: r.author_name ? r.author_name[0] : anio(r.first_publish_year),
+          portada: "https://covers.openlibrary.org/b/id/" + r.cover_i + "-M.jpg",
+        };
+      });
+  },
+
+  // Manga: Jikan (los datos de MyAnimeList)
+  manga: async function (texto) {
+    const datos = await pedirJson("https://api.jikan.moe/v4/manga?limit=10&q=" + encodeURIComponent(texto));
+    return datos.data.map(function (r) {
+      return { titulo: r.title, extra: r.published && r.published.prop.from.year ? String(r.published.prop.from.year) : "", portada: r.images.jpg.image_url };
+    });
+  },
+
+  // Videojuegos: Wikipedia (no hay servicio de portadas de juegos gratis sin registrarse)
+  videojuegos: async function (texto) {
+    const url = "https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrlimit=10" +
+      "&prop=pageimages|description&piprop=thumbnail&pithumbsize=300&pilicense=any&gsrsearch=" +
+      encodeURIComponent(texto + " video game");
+    const datos = await pedirJson(url);
+    if (!datos.query) return [];
+    return Object.values(datos.query.pages)
+      .sort(function (a, b) { return a.index - b.index; }) // en el orden de relevancia
+      .filter(function (p) { return p.thumbnail; })
+      .map(function (p) {
+        return { titulo: p.title.replace(/ \((\d{4} )?video game\)$/, ""), extra: anio((p.description || "").match(/\d{4}/)), portada: p.thumbnail.source };
+      });
+  },
+};
+
+// Espera a que dejes de escribir un momento antes de buscar (para no buscar en cada letra)
+function buscarPortadasPronto(espera) {
+  clearTimeout(temporizadorBusqueda);
+  temporizadorBusqueda = setTimeout(buscarPortadas, espera);
+}
+
+async function buscarPortadas() {
+  const texto = campoTitulo.value.trim();
+  const miBusqueda = ++numeroBusqueda;
+
+  if (texto.length < 2) {
+    pintarPortadas(eleccion.portada ? [{ titulo: texto, extra: "Elegida", portada: eleccion.portada }] : []);
+    estadoPortadas.textContent = "Escribe el título para buscar portadas.";
+    return;
+  }
+
+  estadoPortadas.textContent = "Buscando…";
+  try {
+    let resultados = await BUSCADORES[eleccion.apartado](texto);
+    if (miBusqueda !== numeroBusqueda) return; // ya hay una búsqueda más nueva
+    resultados = resultados.slice(0, 10);
+
+    // Si ya tenías una portada elegida y no sale en los resultados, la dejamos la primera
+    const yaEsta = resultados.some(function (r) { return r.portada === eleccion.portada; });
+    if (eleccion.portada && !yaEsta) {
+      resultados.unshift({ titulo: "", extra: "Elegida", portada: eleccion.portada });
+    }
+
+    pintarPortadas(resultados);
+    estadoPortadas.textContent = resultados.length ? "" : "No he encontrado portadas. Prueba con otro título.";
+  } catch (error) {
+    if (miBusqueda !== numeroBusqueda) return;
+    estadoPortadas.textContent = "No se han podido buscar portadas. Revisa tu conexión.";
+  }
+}
+
+// Pinta la fila de portadas para elegir
+function pintarPortadas(resultados) {
+  contenedorPortadas.innerHTML = "";
+  resultados.forEach(function (r) {
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "portada-opcion";
+    boton.dataset.portada = r.portada;
+    boton.dataset.titulo = r.titulo || "";
+    boton.setAttribute("aria-label", (r.titulo || "Portada") + (r.extra ? ", " + r.extra : ""));
+
+    boton.appendChild(crearPortada(r.portada, eleccion.apartado));
+
+    const pie = document.createElement("span");
+    pie.className = "portada-pie";
+    pie.textContent = r.extra || r.titulo;
+    boton.appendChild(pie);
+
+    contenedorPortadas.appendChild(boton);
+  });
+  contenedorPortadas.hidden = resultados.length === 0;
+  marcarPortada();
+}
+
+// Marca la portada elegida
+function marcarPortada() {
+  contenedorPortadas.querySelectorAll("button").forEach(function (boton) {
+    boton.setAttribute("aria-pressed", String(boton.dataset.portada === eleccion.portada));
+  });
+}
 
 // =========================================
 // AVISO CON DESHACER
