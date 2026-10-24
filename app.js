@@ -492,6 +492,27 @@ function anio(fecha) {
   return fecha ? String(fecha).slice(0, 4) : "";
 }
 
+// Busca en la Wikipedia inglesa artículos de ese tipo ("film", "video game")
+// y nos quedamos con la imagen principal de cada uno (normalmente el póster o la carátula).
+async function buscarEnWikipedia(texto, tipo) {
+  const url = "https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrlimit=10" +
+    "&prop=pageimages|description&piprop=thumbnail&pithumbsize=300&pilicense=any&gsrsearch=" +
+    encodeURIComponent(texto + " " + tipo);
+  const datos = await pedirJson(url);
+  if (!datos.query) return [];
+  return Object.values(datos.query.pages)
+    .sort(function (a, b) { return a.index - b.index; }) // en el orden de relevancia
+    .filter(function (p) { return p.thumbnail; })
+    .map(function (p) {
+      return {
+        // "Dune (2021 film)" → "Dune"
+        titulo: p.title.replace(/ \([^)]*(film|video game)\)$/i, ""),
+        extra: anio((p.description || "").match(/\d{4}/)),
+        portada: p.thumbnail.source,
+      };
+    });
+}
+
 const BUSCADORES = {
   // Música: discos de iTunes
   musica: async function (texto) {
@@ -501,12 +522,9 @@ const BUSCADORES = {
     });
   },
 
-  // Películas: iTunes
-  peliculas: async function (texto) {
-    const datos = await pedirJsonp("https://itunes.apple.com/search?media=movie&entity=movie&country=es&limit=10&term=" + encodeURIComponent(texto));
-    return datos.results.map(function (r) {
-      return { titulo: r.trackName, extra: anio(r.releaseDate), portada: r.artworkUrl100.replace("100x100bb", "300x450bb") };
-    });
+  // Películas: Wikipedia (casi todas las películas tienen su póster ahí)
+  peliculas: function (texto) {
+    return buscarEnWikipedia(texto, "film");
   },
 
   // Series: TVmaze
@@ -519,41 +537,45 @@ const BUSCADORES = {
       });
   },
 
-  // Libros: Open Library
+  // Libros: Google Books
   libros: async function (texto) {
-    const datos = await pedirJson("https://openlibrary.org/search.json?limit=12&fields=title,author_name,first_publish_year,cover_i&q=" + encodeURIComponent(texto));
-    return datos.docs
-      .filter(function (r) { return r.cover_i; })
+    const datos = await pedirJson("https://www.googleapis.com/books/v1/volumes?printType=books&maxResults=15&q=" + encodeURIComponent(texto));
+    return (datos.items || [])
+      .filter(function (r) { return r.volumeInfo.imageLinks; })
       .map(function (r) {
+        const libro = r.volumeInfo;
         return {
-          titulo: r.title,
-          extra: r.author_name ? r.author_name[0] : anio(r.first_publish_year),
-          portada: "https://covers.openlibrary.org/b/id/" + r.cover_i + "-M.jpg",
+          titulo: libro.title,
+          extra: libro.authors ? libro.authors[0] : anio(libro.publishedDate),
+          // Las portadas de Google vienen con "http" y un efecto de página doblada: los quitamos
+          portada: libro.imageLinks.thumbnail.replace("http:", "https:").replace("&edge=curl", ""),
         };
       });
   },
 
-  // Manga: Jikan (los datos de MyAnimeList)
+  // Manga: AniList (ordena los resultados por lo que más se parece a lo que escribes)
   manga: async function (texto) {
-    const datos = await pedirJson("https://api.jikan.moe/v4/manga?limit=10&q=" + encodeURIComponent(texto));
-    return datos.data.map(function (r) {
-      return { titulo: r.title, extra: r.published && r.published.prop.from.year ? String(r.published.prop.from.year) : "", portada: r.images.jpg.image_url };
+    const consulta = "query ($q: String) { Page(perPage: 10) { media(search: $q, type: MANGA, sort: SEARCH_MATCH) " +
+      "{ title { romaji english } startDate { year } coverImage { large } } } }";
+    const respuesta = await fetch("https://graphql.anilist.co", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ query: consulta, variables: { q: texto } }),
+    });
+    if (!respuesta.ok) throw new Error("Error " + respuesta.status);
+    const datos = await respuesta.json();
+    return datos.data.Page.media.map(function (r) {
+      return {
+        titulo: r.title.english || r.title.romaji,
+        extra: r.startDate.year ? String(r.startDate.year) : "",
+        portada: r.coverImage.large,
+      };
     });
   },
 
   // Videojuegos: Wikipedia (no hay servicio de portadas de juegos gratis sin registrarse)
-  videojuegos: async function (texto) {
-    const url = "https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrlimit=10" +
-      "&prop=pageimages|description&piprop=thumbnail&pithumbsize=300&pilicense=any&gsrsearch=" +
-      encodeURIComponent(texto + " video game");
-    const datos = await pedirJson(url);
-    if (!datos.query) return [];
-    return Object.values(datos.query.pages)
-      .sort(function (a, b) { return a.index - b.index; }) // en el orden de relevancia
-      .filter(function (p) { return p.thumbnail; })
-      .map(function (p) {
-        return { titulo: p.title.replace(/ \((\d{4} )?video game\)$/, ""), extra: anio((p.description || "").match(/\d{4}/)), portada: p.thumbnail.source };
-      });
+  videojuegos: function (texto) {
+    return buscarEnWikipedia(texto, "video game");
   },
 };
 
