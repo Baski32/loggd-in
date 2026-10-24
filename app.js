@@ -35,7 +35,7 @@ let ultimoBorrado = null;          // lo último que se borró, para poder desha
 let temporizadorAviso = null;      // para esconder el aviso pasados unos segundos
 
 // Lo que está elegido ahora mismo en el panel
-let eleccion = { apartado: "musica", estado: "pendiente", nota: null, portada: null };
+let eleccion = { apartado: "musica", estado: "pendiente", estrellas: null, portada: null };
 let temporizadorBusqueda = null;   // espera un poco a que dejes de escribir antes de buscar
 let numeroBusqueda = 0;            // para ignorar respuestas de búsquedas antiguas
 
@@ -57,6 +57,9 @@ const bloqueFecha = document.getElementById("bloque-fecha");
 const opcionesApartado = document.getElementById("opciones-apartado");
 const opcionesEstado = document.getElementById("opciones-estado");
 const opcionesNota = document.getElementById("opciones-nota");
+const valoracionNumero = document.getElementById("valoracion-numero");
+const campoResena = document.getElementById("campo-resena");
+const contadorResena = document.getElementById("contador-resena");
 const botonGuardar = document.getElementById("boton-guardar");
 const botonBorrar = document.getElementById("boton-borrar");
 const botonCerrar = document.getElementById("boton-cerrar");
@@ -83,7 +86,15 @@ function guardarElementos() {
 function cargarElementos() {
   try {
     const texto = localStorage.getItem(CLAVE_GUARDADO);
-    return texto ? JSON.parse(texto) : [];
+    const lista = texto ? JSON.parse(texto) : [];
+    // Antes la nota iba del 1 al 10. La pasamos a estrellas (de 0,5 a 5): un 7 pasa a 3,5.
+    lista.forEach(function (e) {
+      if (e.estrellas === undefined) {
+        e.estrellas = e.nota ? Math.round(e.nota) / 2 : null;
+        delete e.nota;
+      }
+    });
+    return lista;
   } catch (error) {
     return []; // si lo guardado está estropeado, empezamos de cero
   }
@@ -205,17 +216,46 @@ function crearFila(e) {
   }
 
   info.appendChild(datos);
-  fila.appendChild(info);
 
-  // La nota, grande a la derecha (un guion si no tiene)
-  const nota = document.createElement("span");
-  nota.className = "fila-nota" + (e.nota ? "" : " sin-nota");
-  nota.textContent = e.nota ? e.nota : "–";
-  nota.setAttribute("aria-label", e.nota ? "Nota " + e.nota + " de 10" : "Sin nota");
-  fila.appendChild(nota);
+  // Las estrellas, si tiene valoración
+  if (e.estrellas) {
+    const estrellas = document.createElement("span");
+    estrellas.className = "estrellas-mini";
+    estrellas.setAttribute("role", "img");
+    estrellas.setAttribute("aria-label", formatearEstrellas(e.estrellas) + " de 5 estrellas");
+    for (let i = 1; i <= 5; i++) {
+      const estrella = document.createElement("span");
+      estrella.className = "estrella-mini " + rellenoEstrella(e.estrellas, i);
+      estrellas.appendChild(estrella);
+    }
+    info.appendChild(estrellas);
+  }
+
+  // Un trocito de la reseña
+  if (e.resena) {
+    const resena = document.createElement("span");
+    resena.className = "fila-resena";
+    resena.textContent = e.resena;
+    info.appendChild(resena);
+  }
+
+  fila.appendChild(info);
 
   li.appendChild(fila);
   return li;
+}
+
+// ¿Cómo se pinta la estrella número "i" con esta valoración? Llena, media o vacía.
+// Ejemplo con 3,5: las estrellas 1, 2 y 3 llenas, la 4 media y la 5 vacía.
+function rellenoEstrella(valor, i) {
+  if (valor >= i) return "llena";
+  if (valor >= i - 0.5) return "media";
+  return "vacia";
+}
+
+// 3.5 → "3,5"
+function formatearEstrellas(valor) {
+  return String(valor).replace(".", ",");
 }
 
 // Crea el hueco de la portada: la imagen si la hay, o un recuadro vacío
@@ -247,7 +287,8 @@ function abrirPanel(id) {
   if (idEditando) {
     const e = elementos.find(function (x) { return x.id === idEditando; });
     campoTitulo.value = e.titulo;
-    eleccion = { apartado: e.apartado, estado: e.estado, nota: e.nota, portada: e.portada || null };
+    eleccion = { apartado: e.apartado, estado: e.estado, estrellas: e.estrellas || null, portada: e.portada || null };
+    campoResena.value = e.resena || "";
     campoFecha.value = e.fecha || fechaDeHoy();
     hojaTitulo.textContent = "Editar";
     botonGuardar.textContent = "Guardar";
@@ -258,9 +299,10 @@ function abrirPanel(id) {
       // si estás en una pestaña, te propone ese apartado
       apartado: apartadoActual === "todos" ? "musica" : apartadoActual,
       estado: "pendiente",
-      nota: null,
+      estrellas: null,
       portada: null,
     };
+    campoResena.value = "";
     campoFecha.value = fechaDeHoy();
     hojaTitulo.textContent = "Añadir";
     botonGuardar.textContent = "Añadir";
@@ -290,7 +332,15 @@ function abrirPanel(id) {
 function pintarEleccion() {
   marcarOpcion(opcionesApartado, eleccion.apartado);
   marcarOpcion(opcionesEstado, eleccion.estado);
-  marcarOpcion(opcionesNota, eleccion.nota);
+  // Estrellas: pintamos cada una llena, media o vacía
+  opcionesNota.querySelectorAll(".estrella").forEach(function (estrella, posicion) {
+    estrella.className = "estrella " + rellenoEstrella(eleccion.estrellas || 0, posicion + 1);
+  });
+  opcionesNota.querySelectorAll("button").forEach(function (boton) {
+    boton.setAttribute("aria-pressed", String(Number(boton.dataset.valor) === eleccion.estrellas));
+  });
+  valoracionNumero.textContent = eleccion.estrellas ? formatearEstrellas(eleccion.estrellas) : "Sin valorar";
+  contadorResena.textContent = campoResena.value.length + "/500";
   bloqueFecha.hidden = eleccion.estado !== "terminado";
   botonGuardar.disabled = campoTitulo.value.trim() === "";
 }
@@ -316,12 +366,12 @@ opcionesEstado.addEventListener("click", function (evento) {
   pintarEleccion();
 });
 
-// Clic en las notas. Si tocas la que ya estaba elegida, se quita.
+// Clic en las estrellas. Si tocas la valoración que ya estaba elegida, se quita.
 opcionesNota.addEventListener("click", function (evento) {
   const boton = evento.target.closest("button");
   if (!boton) return;
   const valor = Number(boton.dataset.valor);
-  eleccion.nota = eleccion.nota === valor ? null : valor;
+  eleccion.estrellas = eleccion.estrellas === valor ? null : valor;
   pintarEleccion();
 });
 
@@ -329,6 +379,11 @@ opcionesNota.addEventListener("click", function (evento) {
 campoTitulo.addEventListener("input", function () {
   pintarEleccion();
   buscarPortadasPronto(600);
+});
+
+// Al escribir la reseña, actualizamos el contador de letras
+campoResena.addEventListener("input", function () {
+  contadorResena.textContent = campoResena.value.length + "/500";
 });
 
 // Clic en una portada: la elegimos (o la quitamos si ya estaba elegida)
@@ -357,7 +412,8 @@ formulario.addEventListener("submit", function (evento) {
     titulo: titulo,
     apartado: eleccion.apartado,
     estado: eleccion.estado,
-    nota: eleccion.nota,
+    estrellas: eleccion.estrellas,
+    resena: campoResena.value.trim(),
     portada: eleccion.portada,
     // solo guardamos fecha si está terminado
     fecha: eleccion.estado === "terminado" ? (campoFecha.value || fechaDeHoy()) : null,

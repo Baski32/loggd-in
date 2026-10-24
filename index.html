@@ -126,21 +126,43 @@
         <input type="date" id="campo-fecha">
       </label>
 
+      <!-- VALORACIÓN de 0,5 a 5 estrellas.
+           Cada estrella tiene dos mitades: la izquierda vale media y la derecha, una entera. -->
       <fieldset class="grupo">
-        <legend>Nota <span class="ayuda">(toca otra vez para quitarla)</span></legend>
-        <div class="opciones opciones-nota" id="opciones-nota">
-          <button type="button" data-valor="1">1</button>
-          <button type="button" data-valor="2">2</button>
-          <button type="button" data-valor="3">3</button>
-          <button type="button" data-valor="4">4</button>
-          <button type="button" data-valor="5">5</button>
-          <button type="button" data-valor="6">6</button>
-          <button type="button" data-valor="7">7</button>
-          <button type="button" data-valor="8">8</button>
-          <button type="button" data-valor="9">9</button>
-          <button type="button" data-valor="10">10</button>
+        <legend>Valoración <span class="ayuda">(toca otra vez para quitarla)</span></legend>
+        <div class="valoracion">
+          <div class="estrellas" id="opciones-nota">
+          <span class="estrella">
+            <button type="button" data-valor="0.5" aria-label="0,5 estrellas"></button>
+            <button type="button" data-valor="1" aria-label="1 estrella"></button>
+          </span>
+          <span class="estrella">
+            <button type="button" data-valor="1.5" aria-label="1,5 estrellas"></button>
+            <button type="button" data-valor="2" aria-label="2 estrellas"></button>
+          </span>
+          <span class="estrella">
+            <button type="button" data-valor="2.5" aria-label="2,5 estrellas"></button>
+            <button type="button" data-valor="3" aria-label="3 estrellas"></button>
+          </span>
+          <span class="estrella">
+            <button type="button" data-valor="3.5" aria-label="3,5 estrellas"></button>
+            <button type="button" data-valor="4" aria-label="4 estrellas"></button>
+          </span>
+          <span class="estrella">
+            <button type="button" data-valor="4.5" aria-label="4,5 estrellas"></button>
+            <button type="button" data-valor="5" aria-label="5 estrellas"></button>
+          </span>
+          </div>
+          <span class="valoracion-numero" id="valoracion-numero"></span>
         </div>
       </fieldset>
+
+      <!-- RESEÑA: un comentario corto, opcional -->
+      <label class="grupo">
+        <span class="etiqueta-grupo">Reseña <span class="ayuda">(opcional)</span></span>
+        <textarea id="campo-resena" rows="3" maxlength="500" placeholder="¿Qué te ha parecido?"></textarea>
+        <span class="contador" id="contador-resena">0/500</span>
+      </label>
 
       <div class="hoja-acciones">
         <!-- Borrar solo aparece al editar -->
